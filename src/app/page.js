@@ -2,11 +2,14 @@
 import React, { useState, useEffect } from "react";
 import ChatHistory from "../components/ui/ChatHistory";
 import ChatWindow from "../components/ui/ChatWindow";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../components/ui/textarea";
+import { Button } from "../components/ui/button";
+import { Avatar } from "../components/ui/avatar";
+import { ScrollArea } from "../components/ui/scroll-area";
 
 const ChatPage = () => {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState({}); // Use an object to store messages for each chat partner
   const [currentUser, setCurrentUser] = useState({
     id: 1,
     name: "Wangs",
@@ -26,19 +29,19 @@ const ChatPage = () => {
 
     ws.onmessage = (event) => {
       const receivedMessage = JSON.parse(event.data);
-      // Only show messages that are either from or to the current chat partner
-      if (
-        (receivedMessage.sender === currentUser.name &&
-          receivedMessage.receiver === chatPartner.name) ||
-        (receivedMessage.sender === chatPartner.name &&
-          receivedMessage.receiver === currentUser.name)
-      ) {
-        setMessages((prevMessages) => [...prevMessages, receivedMessage]);
-      }
+      const partnerName = receivedMessage.sender === currentUser.name
+        ? receivedMessage.receiver
+        : receivedMessage.sender;
+
+      // Update messages for the sender/receiver pair
+      setMessages(prevMessages => ({
+        ...prevMessages,
+        [partnerName]: [...(prevMessages[partnerName] || []), receivedMessage]
+      }));
     };
 
     return () => ws.close();
-  }, [chatPartner, currentUser.name]);
+  }, [currentUser.name]);
 
   const sendMessage = () => {
     if (socket && message && chatPartner && chatPartner.id !== currentUser.id) {
@@ -48,7 +51,10 @@ const ChatPage = () => {
         receiver: chatPartner.name,
       };
       socket.send(JSON.stringify(msg));
-      setMessages((prevMessages) => [...prevMessages, msg]);
+      setMessages(prevMessages => ({
+        ...prevMessages,
+        [chatPartner.name]: [...(prevMessages[chatPartner.name] || []), msg]
+      }));
       setMessage("");
     }
   };
@@ -56,10 +62,10 @@ const ChatPage = () => {
   const handleSelectUser = (user) => {
     if (user.id !== currentUser.id) {
       setChatPartner(user);
-      // Clear previous messages when a new user is selected
-      setMessages([]);
     }
   };
+
+  const currentMessages = chatPartner ? messages[chatPartner.name] || [] : [];
 
   return (
     <div className="flex h-screen">
@@ -67,10 +73,18 @@ const ChatPage = () => {
       {chatPartner && (
         <div className="flex flex-col w-3/4">
           <div className="flex justify-between items-center p-4 border-b">
-            <div className="text-xl font-bold">{chatPartner.name}</div>
-            <div className="text-xl font-bold">{currentUser.name}</div>
+            <div className="flex items-center">
+              <Avatar className="h-10 w-10" />
+              <div className="ml-4 text-xl font-bold">{chatPartner.name}</div>
+            </div>
+            <div className="flex items-center">
+              <Avatar className="h-10 w-10" />
+              <div className="ml-4 text-xl font-bold">{currentUser.name}</div>
+            </div>
           </div>
-          <ChatWindow messages={messages} currentUser={currentUser} />
+          <ScrollArea className="flex-1 p-4 overflow-auto">
+            <ChatWindow messages={currentMessages} currentUser={currentUser} />
+          </ScrollArea>
           <div className="p-4 border-t flex">
             <Textarea
               className="flex-1 mr-2"
@@ -78,12 +92,7 @@ const ChatPage = () => {
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type your message here..."
             />
-            <button
-              className="bg-blue-500 text-white px-4 py-2 rounded"
-              onClick={sendMessage}
-            >
-              Send
-            </button>
+            <Button onClick={sendMessage}>Send</Button>
           </div>
         </div>
       )}
