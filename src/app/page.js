@@ -2,14 +2,14 @@
 import React, { useState, useEffect } from "react";
 import ChatHistory from "../components/ui/ChatHistory";
 import ChatWindow from "../components/ui/ChatWindow";
-import InputField from "../components/ui/InputField";
+import { Textarea } from "@/components/ui/textarea";
 
 const ChatPage = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [currentUser, setCurrentUser] = useState({
     id: 1,
-    name: "Namgay Wangs",
+    name: "Wangs",
   });
   const [chatPartner, setChatPartner] = useState(null);
   const [socket, setSocket] = useState(null);
@@ -38,7 +38,7 @@ const ChatPage = () => {
     };
 
     return () => ws.close();
-  }, [chatPartner]);
+  }, [chatPartner, currentUser.name]);
 
   const sendMessage = () => {
     if (socket && message && chatPartner && chatPartner.id !== currentUser.id) {
@@ -71,17 +71,24 @@ const ChatPage = () => {
             <div className="text-xl font-bold">{currentUser.name}</div>
           </div>
           <ChatWindow messages={messages} currentUser={currentUser} />
-          <InputField
-            message={message}
-            setMessage={setMessage}
-            sendMessage={sendMessage}
-          />
+          <div className="p-4 border-t flex">
+            <Textarea
+              className="flex-1 mr-2"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Type your message here..."
+            />
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+              onClick={sendMessage}
+            >
+              Send
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
 };
-
-
 
 export default ChatPage;
