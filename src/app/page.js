@@ -19,7 +19,7 @@ const ChatPage = () => {
   const users = [
     { id: 2, name: "Dupchu Wangmo" },
     { id: 3, name: "Karma Wangs" },
-    { id: 4, name: "Sangay Wangs" },
+    { id: 4, name: "Poms" },
     { id: 5, name: "Tshering Wangs" },
   ];
 
